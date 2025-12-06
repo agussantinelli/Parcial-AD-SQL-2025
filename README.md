@@ -1,0 +1,1 @@
+# Parcial-AD-SQL-2025
