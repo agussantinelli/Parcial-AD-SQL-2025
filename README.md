@@ -9,7 +9,9 @@ clientes o más, sin embargo el sistema actual solo permite registrar
 para permitir que las solicitudes sean de muchos clientes y los 
 clientes puedan hacer muchas solicitudes. Modificar la estructura de 
 la base de datos para el nuevo modelo, migrar el único cliente actual 
-al nuevo modelo en una transacción y borrar la estructura anterior. 
+al nuevo modelo en una transacción y borrar la estructura anterior.
+<img width="640" height="70" alt="image" src="https://github.com/user-attachments/assets/ac7305ca-5859-46b3-9348-2d5ff1e7afa0" />
+
 #### Resolución 
 ```sql 
 create table cliente_contrato ( 
