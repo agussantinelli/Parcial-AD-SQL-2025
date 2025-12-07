@@ -244,6 +244,8 @@ solicitudes. Se requiere modificar la estructura de la base de datos
 para soportar este cambio en el modelo, migrar el agente asignado 
 registrado en las solicitudes existentes al nuevo modelo en una 
 transacción y eliminar la estructura anterior. 
+<img width="636" height="327" alt="image" src="https://github.com/user-attachments/assets/b5fceed3-48fb-47d9-a26b-6315ab830c2c" />
+
 #### Resolución 
 ```sql 
 create table agente_solicitud ( 
