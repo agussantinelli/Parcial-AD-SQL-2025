@@ -495,6 +495,30 @@ select v.id_propiedad
 from visita v 
 where v.fecha_hora_visita>=suv.fecha_contrato 
 ); 
+```
+#### Resolución B - La Mia
+```sql 
+WITH valor_prop_necesario AS (
+    -- Necesitamos saber qué valor tenía la propiedad en el momento EXACTO de CADA pago.
+    SELECT sol.id AS id_solicitud, pa.fecha_hora_pago, MAX(vp.fecha_hora_desde) AS ult_fecha_valor
+    FROM valor_propiedad vp
+    INNER JOIN solicitud_contrato sol ON sol.id_propiedad = vp.id_propiedad
+    INNER JOIN pago pa ON pa.id_solicitud = sol.id AND vp.fecha_hora_desde <= pa.fecha_hora_pago
+    WHERE sol.fecha_contrato IS NOT NULL AND pa.concepto = 'pago alquiler'
+    GROUP BY sol.id, pa.fecha_hora_pago
+)
+SELECT sol.id AS id_solicitud, sol.fecha_contrato, pa.importe AS importe_pago, pa.fecha_hora_pago,
+    (pa.importe / vp.valor) AS proporcion, pdad.id AS id_propiedad, pdad.tipo, pdad.zona, pdad.direccion
+FROM valor_prop_necesario vpn
+INNER JOIN solicitud_contrato sol ON sol.id = vpn.id_solicitud
+INNER JOIN propiedad pdad ON pdad.id = sol.id_propiedad
+INNER JOIN pago pa ON pa.id_solicitud = sol.id AND pa.fecha_hora_pago = vpn.fecha_hora_pago 
+INNER JOIN valor_propiedad vp ON sol.id_propiedad = vp.id_propiedad AND vp.fecha_hora_desde = vpn.ult_fecha_valor
+WHERE (pa.importe / vp.valor) < 0.70 AND sol.id_propiedad NOT IN (
+        SELECT vis.id_propiedad
+        FROM visita vis
+        WHERE vis.fecha_hora_visita > sol.fecha_contrato
+    );
 ``` 
 ### AD.B3 
 #### Enunciado 
