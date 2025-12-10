@@ -406,6 +406,49 @@ drop constraint fk_solicitud_contrato_agente_asignado,
 drop column id_agente, 
 drop column id_propiedad, 
 drop column fecha_hora_desde; 
+```
+#### Resolución B - La Mia
+```sql 
+CREATE TABLE `inmobiliaria_calciferhowl`.`agente_solicitud` (
+  `id_agente` INT UNSIGNED NOT NULL,
+  `id_propiedad` INT UNSIGNED NOT NULL,
+  `fecha_hora_desde` DATETIME NULL,
+  `id_solicitud` INT UNSIGNED NOT NULL,
+  PRIMARY KEY (`id_agente`, `id_propiedad`, `id_solicitud`),
+  INDEX `fk_agente_solicitud_solicitud_contrato_idx` (`id_solicitud` ASC) VISIBLE,
+  INDEX `fk_agente_solicitud_agente_asignado_idx` (`id_agente` ASC, `id_propiedad` ASC, `fecha_hora_desde` ASC) VISIBLE,
+  CONSTRAINT `fk_agente_solicitud_solicitud_contrato`
+    FOREIGN KEY (`id_solicitud`)
+    REFERENCES `inmobiliaria_calciferhowl`.`solicitud_contrato` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_agente_solicitud_agente_asignado`
+    FOREIGN KEY (`id_agente` , `id_propiedad` , `fecha_hora_desde`)
+    REFERENCES `inmobiliaria_calciferhowl`.`agente_asignado` (`id_agente` , `id_propiedad` , `fecha_hora_desde`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION);
+    
+START TRANSACTION;
+
+INSERT INTO agente_solicitud (id_agente,id_propiedad,fecha_hora_desde,id_solicitud)
+SELECT soli.id_agente, soli.id_propiedad, soli.fecha_hora_desde, soli.id
+FROM solicitud_contrato soli
+INNER JOIN agente_asignado aa ON aa.id_agente=soli.id_agente AND aa.id_propiedad=soli.id_propiedad
+AND aa.fecha_hora_desde=soli.fecha_hora_desde
+-- el inner join lo hago para terminar de contrastar que me estoy comparando con un agente_asignado real.
+;
+
+COMMIT;
+
+ALTER TABLE `inmobiliaria_calciferhowl`.`solicitud_contrato` 
+DROP FOREIGN KEY `fk_solicitud_contrato_agente_asignado`;
+ALTER TABLE `inmobiliaria_calciferhowl`.`solicitud_contrato` 
+DROP COLUMN `fecha_hora_desde`,
+DROP COLUMN `id_propiedad`,
+DROP COLUMN `id_agente`,
+DROP INDEX `fk_solicitud_contrato_agente_asignado_idx` ;
+;
+
 ``` 
 ### AD.B2 
 #### Enunciado 
