@@ -541,4 +541,29 @@ select avg(cnt)
 from cant_2024 
 where cant_2024.tipo = p.tipo 
 ); 
+```
+#### Resolución D - La Mia
+```sql 
+WITH cant_visitas_2024 AS (
+SELECT pd.id, count(vis.fecha_hora_visita) cant_visitas 
+FROM propiedad pd
+LEFT JOIN visita vis ON pd.id=vis.id_propiedad AND YEAR(vis.fecha_hora_visita)=2024
+group by pd.id
+), avg_visitas_2024 AS (
+SELECT pd.tipo, avg(cant_visitas) avg_2024
+from cant_visitas_2024 cv
+INNER JOIN propiedad pd ON pd.id=cv.id
+GROUP BY pd.tipo
+), cant_visitas_2025 AS (
+SELECT pd.id, count(vis.fecha_hora_visita) cant_visitas 
+FROM propiedad pd
+LEFT JOIN visita vis ON pd.id=vis.id_propiedad AND YEAR(vis.fecha_hora_visita)=2025
+group by pd.id 
+)
+
+SELECT pd.id, pd.tipo, pd.zona, pd.situacion, avgold.avg_2024 as promedio_2024, cvnew.cant_visitas as visitas_2025
+FROM propiedad pd
+INNER JOIN avg_visitas_2024 avgold ON pd.tipo=avgold.tipo
+INNER JOIN cant_visitas_2025 cvnew ON cvnew.id=pd.id
+WHERE avgold.avg_2024<cvnew.cant_visitas
 ``` 
