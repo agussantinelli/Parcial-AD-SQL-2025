@@ -604,18 +604,15 @@ propiedad en 2024.
 #### Resolución 
 ```sql 
 with v_prop_tipo_anio as ( 
-select p.id id_propiedad, p.tipo, p.zona, p.situacion 
-, year(vi.fecha_hora_visita) anio 
-, count(vi.fecha_hora_visita) cant_vis 
+select p.id id_propiedad, p.tipo, p.zona, p.situacion,
+year(vi.fecha_hora_visita) anio, count(vi.fecha_hora_visita) cant_vis 
 from propiedad p 
 left join visita vi  # left, count(atrib) y coalesce son para 
 # calcular bien el promedio aún si 
 # una prop no tiene visitas en 2024 
 on vi.id_propiedad=p.id 
-where vi.fecha_hora_visita >= '20240101' 
-and  vi.fecha_hora_visita < '20260101' 
-group by p.id, p.tipo, p.zona, p.situacion 
-, year(vi.fecha_hora_visita) # si no se dan cuenta 
+where vi.fecha_hora_visita >= '20240101' and  vi.fecha_hora_visita < '20260101' 
+group by p.id, p.tipo, p.zona, p.situacion, year(vi.fecha_hora_visita) # si no se dan cuenta 
 #y lo hacen en 2 temp/cte/subcons es aceptable 
 ), vtipo_2024 as ( # se puede hacer esto junto a las de 2025 sin cte 
 # pero seguramente sea muy dificil para los alumnos 
@@ -624,14 +621,11 @@ from v_prop_tipo_anio vipro
 where vipro.anio=2024 
 group by vipro.tipo 
 ) 
-select vpta.id_propiedad, vpta.tipo, vpta.zona, vpta.situacion 
-, vpta.cant_vis cant_vis_2025 
-, coalesce(vtipo_2024.prom_vis,0) prom_vis_2024 
+select vpta.id_propiedad, vpta.tipo, vpta.zona, vpta.situacion, vpta.cant_vis cant_vis_2025,
+coalesce(vtipo_2024.prom_vis,0) prom_vis_2024 
 from v_prop_tipo_anio vpta 
-left join vtipo_2024 
-on vpta.tipo=vtipo_2024.tipo 
-where vpta.anio=2025 
-and vpta.cant_vis>coalesce(vtipo_2024.prom_vis,0); 
+left join vtipo_2024 on vpta.tipo=vtipo_2024.tipo 
+where vpta.anio=2025 and vpta.cant_vis>coalesce(vtipo_2024.prom_vis,0); 
 ``` 
 #### Resolución B 
 ```sql 
@@ -639,26 +633,25 @@ drop temporary table if exists cantidad_2024;
 create temporary table cantidad_2024 select pro.id,pro.tipo, 
 count(v.id_propiedad) cant_vistas 
 from propiedad pro 
-left join visitas v on  pro.id=v.id_propiedad  and 
-year(v.fecha_hora_visita)=2024 
-group by pro.id, pro.tipo; 
+left join visitas v on  pro.id=v.id_propiedad  and year(v.fecha_hora_visita)=2024 
+group by pro.id, pro.tipo;
+
 drop temporary table if exists promedioxtipo; 
 create temporary table promedioxtipo select c24.tipo, 
 avg(c24.cant_visitas) promedio 
 from cantidad_2024 c24 
-group by c24.tipo; 
+group by c24.tipo;
+
 drop temporary table if exists cantidad_2025; 
 create temporary table cantidad_2025 select 
-pro.id,pro.tipo,pro.zona,pro.situacion,  count(v.id_propiedad) 
-cant_visitas 
+pro.id,pro.tipo,pro.zona,pro.situacion, count(v.id_propiedad) cant_visitas 
 from propiedad pro 
-left join visitas  v on  pro.id=v.id_propiedad  and 
-year(v.fecha_hora_visita)=2025 
-group by pro.id, pro.tipo, pro.zona,pro.situacion; 
+left join visitas  v on  pro.id=v.id_propiedad  and year(v.fecha_hora_visita)=2025 
+group by pro.id, pro.tipo, pro.zona, pro.situacion; 
 select c25.id,  c25.tipo, c25.zona, c25.situacion, c25.cant_visitas, 
 prot.promedio 
 from cantidad_2025 c25 
-inner join   promedioxtipo prot on c25.tipo=prot.tipo 
+inner join  promedioxtipo prot on c25.tipo=prot.tipo 
 where c25.cant_visitas > prot.promedio; 
 ``` 
 #### Resolución C 
