@@ -383,9 +383,9 @@ drop column fecha_hora_desde;
 CREATE TABLE `inmobiliaria_calciferhowl`.`agente_solicitud` (
   `id_agente` INT UNSIGNED NOT NULL,
   `id_propiedad` INT UNSIGNED NOT NULL,
-  `fecha_hora_desde` DATETIME NULL,
+  `fecha_hora_desde` DATETIME NOT NULL,
   `id_solicitud` INT UNSIGNED NOT NULL,
-  PRIMARY KEY (`id_agente`, `id_propiedad`, `id_solicitud`),
+  PRIMARY KEY (`id_agente`, `id_propiedad`, `id_solicitud`,`fecha_hora_desde` ),
   INDEX `fk_agente_solicitud_solicitud_contrato_idx` (`id_solicitud` ASC) VISIBLE,
   INDEX `fk_agente_solicitud_agente_asignado_idx` (`id_agente` ASC, `id_propiedad` ASC, `fecha_hora_desde` ASC) VISIBLE,
   CONSTRAINT `fk_agente_solicitud_solicitud_contrato`
@@ -404,8 +404,6 @@ START TRANSACTION;
 INSERT INTO agente_solicitud (id_agente,id_propiedad,fecha_hora_desde,id_solicitud)
 SELECT soli.id_agente, soli.id_propiedad, soli.fecha_hora_desde, soli.id
 FROM solicitud_contrato soli
-INNER JOIN agente_asignado aa ON aa.id_agente=soli.id_agente AND aa.id_propiedad=soli.id_propiedad
-AND aa.fecha_hora_desde=soli.fecha_hora_desde
 -- el inner join lo hago para terminar de contrastar que me estoy comparando con un agente_asignado real.
 ;
 
@@ -419,7 +417,6 @@ DROP COLUMN `id_propiedad`,
 DROP COLUMN `id_agente`,
 DROP INDEX `fk_solicitud_contrato_agente_asignado_idx` ;
 ;
-
 ``` 
 ### AD.B2 
 #### Enunciado 
