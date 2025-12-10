@@ -126,6 +126,34 @@ inner join persona per on sc.id_agente= per.id
 where sc.importe_mensual/vp.valor >= 0.7 and sc.estado= 'rechazada' 
 and sc.id not in (select id_solicitud from garantia where estado 
 ='rechazada') ; 
+```
+#### Resolución C - La Mia 
+```sql 
+WITH precio_vigente_solicitud AS (
+    -- CORRECCIÓN: Buscamos la fecha de precio específica para CADA solicitud (sc.id), 
+    SELECT sc.id AS id_solicitud,
+        MAX(vp.fecha_hora_desde) AS fecha_vigencia
+    FROM solicitud_contrato sc
+    INNER JOIN valor_propiedad vp ON sc.id_propiedad = vp.id_propiedad 
+    AND vp.fecha_hora_desde <= sc.fecha_solicitud 
+    WHERE sc.estado = 'rechazada'
+    GROUP BY sc.id
+)
+SELECT 
+    sc.id AS id_solicitud, sc.fecha_solicitud, ag.id AS id_agente, ag.nombre AS nombre_agente, 
+    ag.apellido AS apellido_agente, (sc.importe_mensual / vp.valor) AS proporcion
+FROM solicitud_contrato sc
+INNER JOIN precio_vigente_solicitud pvs ON sc.id = pvs.id_solicitud
+INNER JOIN valor_propiedad vp ON vp.id_propiedad = sc.id_propiedad AND vp.fecha_hora_desde = pvs.fecha_vigencia
+INNER JOIN persona ag ON ag.id = sc.id_agente
+WHERE 
+    sc.estado = 'rechazada'
+    AND (sc.importe_mensual / vp.valor) >= 0.70
+    AND sc.id NOT IN (
+        SELECT gar.id_solicitud 
+        FROM garantia gar
+        WHERE gar.estado = 'rechazada'
+    );
 ``` 
 ### AD.A3 
 #### Enunciado 
