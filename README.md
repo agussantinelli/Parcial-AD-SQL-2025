@@ -147,6 +147,7 @@ where year(vi.fecha_hora_visita)=2025;
 # no descontaría por esto; 
 ``` 
 #### Resolución B 
+```sql 
 drop temporary table if exists cant_visitas_mensuales; 
 create temporary table cant_visitas_mensuales (select id_propiedad, 
 month(fecha_hora_visita) mes , max(fecha_hora_visita) ultima_visita, 
@@ -168,7 +169,8 @@ cvm.cantidad_visitas=maxm.cant_mensual
 inner join propiedad pro on cvm.id_propiedad=pro.id 
 inner join visita vis on cvm.id_propiedad=vis.id_propiedad and 
 vis.fecha_hora_visita=cvm.ultima_visita 
-inner join persona per on per.id=vis.id_agente; 
+inner join persona per on per.id=vis.id_agente;
+```
 ### AD.A4 
 #### Enunciado 
 AD.A4 -  Mejoras en las ofertas  . La empresa requiere  un listado de las 
@@ -208,6 +210,7 @@ where scpta.anio=2024
 and scpta.cant_sol > coalesce(sctipo_2023.prom_sol,0); 
 ``` 
 #### Resolución B 
+```sql 
 drop temporary table if exists cantidad_2023; 
 create temporary table cantidad_2023 select pro.id,pro.tipo, 
 count(sc.id_propiedad) cant_solicitudes 
@@ -232,7 +235,8 @@ select c24.id,  c24.tipo, c24.zona, c24.situacion,
 c24.cant_solicitudes, prot.promedio 
 from cantidad_2024 c24 
 inner join   promedioxtipo prot on c24.tipo=prot.tipo 
-where c24.cant_solicitudes > prot.promedio; 
+where c24.cant_solicitudes > prot.promedio;
+```
 ## Parcial AD - Tema B 
 ### AD.B1 
 #### Enunciado 
