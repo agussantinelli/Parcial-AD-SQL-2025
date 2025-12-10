@@ -233,6 +233,37 @@ inner join visita vis on cvm.id_propiedad=vis.id_propiedad and
 vis.fecha_hora_visita=cvm.ultima_visita 
 inner join persona per on per.id=vis.id_agente;
 ```
+#### Resolución C - La Mia 
+```sql 
+WITH metricas_propiedad_mes AS (
+    -- 1. Calculamos todo lo referente a la propiedad en ese mes: 
+    -- Cuántas veces se visitó y cuándo fue la última vez.
+    SELECT vis.id_propiedad, MONTH(vis.fecha_hora_visita) AS mes, COUNT(*) AS cantidad_visitas,
+        MAX(vis.fecha_hora_visita) AS fecha_ultima_visita
+    FROM visita vis
+    WHERE YEAR(vis.fecha_hora_visita) = 2025
+    GROUP BY vis.id_propiedad, MONTH(vis.fecha_hora_visita)
+), 
+max_visitas_por_mes AS (
+    -- 2. Definimos la vara alta: ¿Cuál fue el número máximo de visitas logrado en cada mes?
+    SELECT mpm.mes, MAX(mpm.cantidad_visitas) AS max_cantidad
+    FROM metricas_propiedad_mes mpm
+    GROUP BY mpm.mes
+)
+SELECT mpm.mes, p.id AS id_propiedad, p.zona, p.tipo, mpm.cantidad_visitas, mpm.fecha_ultima_visita, 
+    ag.id AS id_agente, ag.nombre AS nombre_agente, ag.apellido AS apellido_agente
+FROM metricas_propiedad_mes mpm
+-- 1. Filtramos: Nos quedamos solo con las propiedades que igualaron el récord del mes
+INNER JOIN max_visitas_por_mes maxv ON mpm.mes = maxv.mes AND mpm.cantidad_visitas = maxv.max_cantidad
+-- 2. Datos de la propiedad
+INNER JOIN propiedad p ON p.id = mpm.id_propiedad
+-- 3. Para obtener al agente, hacemos join con la visita específica
+-- Usando la clave compuesta: propiedad + fecha exacta de la última visita
+INNER JOIN visita v_detalle ON v_detalle.id_propiedad = mpm.id_propiedad 
+							AND v_detalle.fecha_hora_visita = mpm.fecha_ultima_visita
+INNER JOIN persona ag ON ag.id = v_detalle.id_agente
+ORDER BY mpm.mes;
+```
 ### AD.A4 
 #### Enunciado 
 AD.A4 -  Mejoras en las ofertas  . La empresa requiere  un listado de las 
