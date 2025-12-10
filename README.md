@@ -404,7 +404,6 @@ START TRANSACTION;
 INSERT INTO agente_solicitud (id_agente,id_propiedad,fecha_hora_desde,id_solicitud)
 SELECT soli.id_agente, soli.id_propiedad, soli.fecha_hora_desde, soli.id
 FROM solicitud_contrato soli
--- el inner join lo hago para terminar de contrastar que me estoy comparando con un agente_asignado real.
 ;
 
 COMMIT;
