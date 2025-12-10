@@ -437,29 +437,19 @@ Nota: Los conceptos de pago pueden ser “comision”, “deposito”,
 #### Resolución 
 ```sql 
 with sol_ult_val as ( 
-select p.id_solicitud, p.fecha_hora_pago, p.importe 
-, sc.id_propiedad, sc.fecha_contrato 
-, p.concepto 
-, max(vp.fecha_hora_desde) ult_fec 
+select p.id_solicitud, p.fecha_hora_pago, p.importe, sc.id_propiedad, sc.fecha_contrato, p.concepto, max(vp.fecha_hora_desde) ult_fec 
 from pago p 
-inner join solicitud_contrato sc 
-on p.id_solicitud=sc.id 
-inner join valor_propiedad vp 
-on vp.id_propiedad=sc.id_propiedad 
-and vp.fecha_hora_desde <=p.fecha_hora_pago 
+inner join solicitud_contrato sc on p.id_solicitud=sc.id 
+inner join valor_propiedad vp on vp.id_propiedad=sc.id_propiedad and vp.fecha_hora_desde <=p.fecha_hora_pago 
 where concepto='pago alquiler' 
 group by p.id_solicitud, p.fecha_hora_pago, p.importe, 
 sc.id_propiedad 
 ) 
-select suv.id_solicitud, suv.fecha_contrato, suv.fecha_hora_pago 
-, suv.ult_fec, suv.importe/vp.valor 
-, prop.id id_propiedad, prop.tipo, prop.zona, prop.direccion 
+select suv.id_solicitud, suv.fecha_contrato, suv.fecha_hora_pago, suv.ult_fec, suv.importe/vp.valor,
+prop.id id_propiedad, prop.tipo, prop.zona, prop.direccion 
 from sol_ult_val suv 
-inner join valor_propiedad vp 
-on suv.id_propiedad=vp.id_propiedad 
-and suv.ult_fec=vp.fecha_hora_desde 
-inner join propiedad prop 
-on suv.id_propiedad=prop.id 
+inner join valor_propiedad vp on suv.id_propiedad=vp.id_propiedad and suv.ult_fec=vp.fecha_hora_desde 
+inner join propiedad prop on suv.id_propiedad=prop.id 
 where suv.importe/vp.valor < 0.7 
 and  suv.id_propiedad not in ( 
 select v.id_propiedad 
@@ -509,10 +499,8 @@ Nota: la función year devuelve el año de una fecha
 #### Resolución 
 ```sql 
 with tot_ag as ( 
-select year(sc.fecha_contrato) anio, sc.id_agente 
-, ag.nombre nombre_agente, ag.apellido apellido_agente 
-, sum(sc.importe_mensual) total_importes 
-, max(sc.importe_mensual) mejor_imp 
+select year(sc.fecha_contrato) anio, sc.id_agente, ag.nombre nombre_agente, ag.apellido apellido_agente,
+sum(sc.importe_mensual) total_importes, max(sc.importe_mensual) mejor_imp 
 # si no se dan cuenta acá del max 
 # deben hacer una o dos subonconsulta / TT / CTE más 
 # para calcularlo, sería correcto en ese caso 
@@ -520,25 +508,17 @@ from solicitud_contrato sc
 inner join persona ag 
 on sc.id_agente=ag.id 
 where sc.fecha_contrato is not null 
-group by year(sc.fecha_contrato) 
-, sc.id_agente, ag.nombre, ag.apellido 
+group by year(sc.fecha_contrato), sc.id_agente, ag.nombre, ag.apellido 
 ), max_anio as ( 
 select anio, max(total_importes) max_anio 
 from tot_ag 
 group by anio 
 ) 
-select ta.anio, ta.id_agente, ta.nombre_agente, ta.apellido_agente 
-, ta.total_importes 
-, sc.id, sc.fecha_solicitud, sc.importe_mensual, sc.fecha_contrato 
-, cli.id id_cliente, cli.nombre nombre_cliente, cli.apellido 
-apellido_cliente 
+select ta.anio, ta.id_agente, ta.nombre_agente, ta.apellido_agente, ta.total_importes,sc.id, sc.fecha_solicitud,
+sc.importe_mensual, sc.fecha_contrato, cli.id id_cliente, cli.nombre nombre_cliente, cli.apellido apellido_cliente 
 from tot_ag ta 
-inner join max_anio ma 
-on ta.anio=ma.anio 
-and ta.total_importes=ma.max_anio 
-inner join solicitud_contrato sc 
-on ta.id_agente=sc.id_agente 
-and year(sc.fecha_contrato)=ta.anio 
+inner join max_anio ma on ta.anio=ma.anio and ta.total_importes=ma.max_anio 
+inner join solicitud_contrato sc on ta.id_agente=sc.id_agente and year(sc.fecha_contrato)=ta.anio 
 and sc.importe_mensual=ta.mejor_imp 
 inner join persona cli # puede obtenerse acá o en la primer CTE 
 on sc.id_cliente=cli.id 
@@ -549,27 +529,23 @@ where sc.fecha_contrato is not null
 #### Resolución B 
 ```sql 
 drop temporary table if exists tot_anual; 
-create temporary table tot_anual (select id_agente, 
-year(fecha_contrato) anio , max(importe_mensual) mejor_importe, 
-sum(importe_mensual) suma_importe 
+create temporary table tot_anual (
+select id_agente, year(fecha_contrato) anio , max(importe_mensual) mejor_importe, sum(importe_mensual) suma_importe 
 from solicitud_contrato 
 where year(fecha_solicitud) = year(fecha_contrato) 
-group by id_agente, year(fecha_contrato)); 
+group by id_agente, year(fecha_contrato));
+
 drop temporary table if exists max_anual; 
 create temporary table max_anual ( 
 select anio, max(suma_importe) mejor 
 from tot_anual 
 group by anio); 
-select tta.anio,tta.id_agente, tta.suma_importe, concat ( age.nombre , 
-"  ",age.apellido) , 
-sc.id,sc.fecha_contrato, sc.importe_mensual, sc.fecha_contrato, 
-cli.id, concat ( cli.nombre , "  ",cli.apellido) 
+select tta.anio,tta.id_agente, tta.suma_importe, concat ( age.nombre , "  " ,age.apellido) , sc.id,
+sc.fecha_contrato, sc.importe_mensual, sc.fecha_contrato, cli.id, concat ( cli.nombre , "  ",cli.apellido) 
 from tot_anual tta 
-inner join max_anual maxa on  tta.anio=maxa.anio and 
-tta.suma_importe=maxa.mejor 
+inner join max_anual maxa on  tta.anio=maxa.anio and tta.suma_importe=maxa.mejor 
 inner join persona age on tta.id_agente=age.id 
-inner join solicitud_contrato sc on tta.id_agente=sc.id_agente and 
-sc.importe_mensual=tta.mejor_importe 
+inner join solicitud_contrato sc on tta.id_agente=sc.id_agente and sc.importe_mensual=tta.mejor_importe 
 inner join persona cli on sc.id_cliente=cli.id 
 where sc.fecha_contrato is not null; 
 ```
