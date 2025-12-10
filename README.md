@@ -330,6 +330,40 @@ from cantidad_2024 c24
 inner join   promedioxtipo prot on c24.tipo=prot.tipo 
 where c24.cant_solicitudes > prot.promedio;
 ```
+#### Resolución C - La Mia
+```sql 
+/*
+AD.A4 - Mejoras en las ofertas . 
+La empresa requiere un listado de las propiedades cuya cantidad de solicitudes de contrato en 2024 haya aumentado 
+con respecto al promedio de cantidad de solicitudes de contrato de las propiedades del mismo tipo en 2023. 
+Si una propiedad no tuvo solicitudes debería tenerse en cuenta como 0 para el promedio.
+Indicar id, tipo, zona, situación de la propiedad, cantidad de solicitudes en 2024 y promedio de solicitudes del
+tipo en 2023.
+*/
+
+WITH cant_sol_2023 AS (
+SELECT pdad.id as id_propiedad, count(fecha_solicitud) cant_sol
+FROM propiedad pdad
+LEFT JOIN solicitud_contrato sol on sol.id_propiedad = pdad.id AND YEAR(sol.fecha_solicitud)=2023
+GROUP BY pdad.id
+), prom_2023 AS (
+SELECT avg(cs.cant_sol) prom, pdad.tipo
+from cant_sol_2023 cs
+INNER JOIN propiedad pdad ON pdad.id=cs.id_propiedad
+GROUP BY pdad.tipo
+), cant_sol_2024 AS (
+SELECT pdad.id as id_propiedad, count(fecha_solicitud) cant_sol
+FROM propiedad pdad
+LEFT JOIN solicitud_contrato sol on sol.id_propiedad = pdad.id AND YEAR(sol.fecha_solicitud)=2024
+GROUP BY pdad.id
+)
+SELECT pdad.id, pdad.zona, pdad.tipo, pdad.situacion, cs2024.cant_sol, prom_2023.prom
+FROM propiedad pdad
+INNER JOIN cant_sol_2024 cs2024 ON cs2024.id_propiedad=pdad.id
+INNER JOIN prom_2023  on prom_2023.tipo=pdad.tipo
+WHERE cs2024.cant_sol > prom_2023.prom
+ORDER BY pdad.id
+```
 ## Parcial AD - Tema B 
 ### AD.B1 
 #### Enunciado 
