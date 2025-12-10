@@ -403,6 +403,49 @@ inner join solicitud_contrato sc on tta.id_agente=sc.id_agente and
 sc.importe_mensual=tta.mejor_importe 
 inner join persona cli on sc.id_cliente=cli.id 
 where sc.fecha_contrato is not null; 
+```
+#### Resolución C - Personal
+```sql 
+WITH metricas_agente AS (
+    -- Reemplaza a tus CTEs 'max_pago' y 'suma_importe'.
+    -- Calculamos en un solo paso el total vendido y la mejor venta individual por agente/año.
+    SELECT 
+        sol.id_agente,
+        YEAR(sol.fecha_contrato) AS anio,
+        SUM(sol.importe_mensual) AS sum_importe, -- Total acumulado para competir por el año
+        MAX(sol.importe_mensual) AS max_importe  -- Dato para buscar la mejor solicitud luego
+    FROM solicitud_contrato sol
+    WHERE sol.fecha_contrato IS NOT NULL
+    GROUP BY sol.id_agente, YEAR(sol.fecha_contrato)
+), 
+max_importe_anio AS (
+    -- Tu estructura original se mantiene: buscamos la vara más alta de cada año.
+    SELECT 
+        ma.anio,
+        MAX(ma.sum_importe) AS max_venta_global_anio
+    FROM metricas_agente ma
+    GROUP BY ma.anio
+)
+SELECT 
+    ma.anio, ag.id AS id_agente, ag.nombre AS nombre_agente, ag.apellido AS apellido_agente,
+    ma.sum_importe AS total_ventas_anio, sol.id AS id_solicitud, sol.fecha_solicitud, sol.importe_mensual,
+    sol.fecha_contrato, cli.id AS id_cliente, cli.nombre AS nombre_cliente, cli.apellido AS apellido_cliente
+FROM metricas_agente ma
+-- 1. Filtramos solo los agentes que alcanzaron el máximo global del año
+INNER JOIN max_importe_anio mia 
+    ON ma.anio = mia.anio 
+    AND ma.sum_importe = mia.max_venta_global_anio
+-- 2. Buscamos los datos del agente
+INNER JOIN persona ag 
+    ON ag.id = ma.id_agente
+-- 3. Buscamos la solicitud específica que coincide con el 'max_importe' de ese agente en ese año
+INNER JOIN solicitud_contrato sol 
+    ON sol.id_agente = ma.id_agente 
+    AND YEAR(sol.fecha_contrato) = ma.anio
+    AND sol.importe_mensual = ma.max_importe -- Aquí conectamos con la mejor venta individual
+-- 4. Buscamos al cliente
+INNER JOIN persona cli 
+    ON cli.id = sol.id_cliente
 ``` 
 ### AD.B4 
 #### Enunciado 
