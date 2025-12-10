@@ -81,26 +81,17 @@ Nota: Los estados de solicitudes de contrato pueden ser “en proceso”,
 “en alquiler” o “rechazada”. 
 #### Resolución 
 ```sql 
-select sc.id id_solicitud, sc.fecha_solicitud 
-, age.id id_agente, age.nombre, age.apellido 
-, sc.importe_mensual/vp.valor proporcion 
+select sc.id id_solicitud, sc.fecha_solicitud, age.id id_agente, age.nombre, age.apellido, sc.importe_mensual/vp.valor proporcion 
 from solicitud_contrato sc 
-inner join valor_propiedad vp 
-on sc.id_propiedad=vp.id_propiedad 
-and vp.fecha_hora_desde=( 
+inner join valor_propiedad vp on sc.id_propiedad=vp.id_propiedad and vp.fecha_hora_desde=( 
 select max(ult_val.fecha_hora_desde) 
 from valor_propiedad ult_val 
 where ult_val.id_propiedad=sc.id_propiedad 
 and ult_val.fecha_hora_desde<=sc.fecha_solicitud 
 ) 
-inner join persona age 
-on sc.id_agente=age.id 
-left join garantia g 
-on sc.id=g.id_solicitud 
-and g.estado='rechazada' 
-where sc.estado = 'rechazada' 
-and sc.importe_mensual/vp.valor >=0.7 
-and g.id_solicitud is null; 
+inner join persona age on sc.id_agente=age.id 
+left join garantia g on sc.id=g.id_solicitud and g.estado='rechazada' 
+where sc.estado = 'rechazada' and sc.importe_mensual/vp.valor >=0.7 and g.id_solicitud is null; 
 #el left equivale a agregar al where el not in 
 # sc.id not in (select g.id_solicitud from garantia g where 
 g.estado='rechazada') 
