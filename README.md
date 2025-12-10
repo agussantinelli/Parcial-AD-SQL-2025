@@ -12,7 +12,7 @@ la base de datos para el nuevo modelo, migrar el único cliente actual
 al nuevo modelo en una transacción y borrar la estructura anterior.
 <img width="640" height="70" alt="image" src="https://github.com/user-attachments/assets/ac7305ca-5859-46b3-9348-2d5ff1e7afa0" />
 
-#### Resolución 
+#### Resolución A
 ```sql 
 create table cliente_contrato ( 
 id_solicitud int unsigned not null, 
@@ -33,6 +33,40 @@ commit;
 alter table solicitud_contrato 
 drop constraint fk_solicitud_contrato_persona, 
 drop column id_cliente; 
+```
+#### Resolución B - La Mia
+```sql 
+CREATE TABLE `inmobiliaria_calciferhowl`.`cliente_contrato` (
+  `id_cliente` INT UNSIGNED NOT NULL,
+  `id_solicitud` INT UNSIGNED NOT NULL,
+  PRIMARY KEY (`id_cliente`, `id_solicitud`),
+  INDEX `fk_cliente_contrato_contrato_idx` (`id_solicitud` ASC) VISIBLE,
+  CONSTRAINT `fk_cliente_contrato_cliente`
+    FOREIGN KEY (`id_cliente`)
+    REFERENCES `inmobiliaria_calciferhowl`.`persona` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_cliente_contrato_contrato`
+    FOREIGN KEY (`id_solicitud`)
+    REFERENCES `inmobiliaria_calciferhowl`.`solicitud_contrato` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION);
+
+ START TRANSACTION;
+
+ INSERT INTO cliente_contrato(id_cliente,id_solicitud)
+ SELECT sol.id_cliente,sol.id
+ FROM solicitud_contrato sol;
+ 
+ COMMIT;
+ 
+ALTER TABLE `inmobiliaria_calciferhowl`.`solicitud_contrato` 
+DROP FOREIGN KEY `fk_solicitud_contrato_persona`;
+ALTER TABLE `inmobiliaria_calciferhowl`.`solicitud_contrato` 
+DROP COLUMN `id_cliente`,
+DROP INDEX `fk_solicitud_contrato_persona_idx` ;
+;
+
 ``` 
 ### AD.A2 
 #### Enunciado 
