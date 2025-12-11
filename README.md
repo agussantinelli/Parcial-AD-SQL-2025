@@ -567,26 +567,19 @@ max_importe_anio AS (
     FROM metricas_agente ma
     GROUP BY ma.anio
 )
-SELECT 
-    ma.anio, ag.id AS id_agente, ag.nombre AS nombre_agente, ag.apellido AS apellido_agente,
+SELECT ma.anio, ag.id AS id_agente, ag.nombre AS nombre_agente, ag.apellido AS apellido_agente,
     ma.sum_importe AS total_ventas_anio, sol.id AS id_solicitud, sol.fecha_solicitud, sol.importe_mensual,
     sol.fecha_contrato, cli.id AS id_cliente, cli.nombre AS nombre_cliente, cli.apellido AS apellido_cliente
 FROM metricas_agente ma
 -- 1. Filtramos solo los agentes que alcanzaron el máximo global del año
-INNER JOIN max_importe_anio mia 
-    ON ma.anio = mia.anio 
-    AND ma.sum_importe = mia.max_venta_global_anio
+INNER JOIN max_importe_anio mia ON ma.anio = mia.anio AND ma.sum_importe = mia.max_venta_global_anio
 -- 2. Buscamos los datos del agente
-INNER JOIN persona ag 
-    ON ag.id = ma.id_agente
+INNER JOIN persona ag ON ag.id = ma.id_agente
 -- 3. Buscamos la solicitud específica que coincide con el 'max_importe' de ese agente en ese año
-INNER JOIN solicitud_contrato sol 
-    ON sol.id_agente = ma.id_agente 
-    AND YEAR(sol.fecha_contrato) = ma.anio
+INNER JOIN solicitud_contrato sol ON sol.id_agente = ma.id_agente AND YEAR(sol.fecha_contrato) = ma.anio
     AND sol.importe_mensual = ma.max_importe -- Aquí conectamos con la mejor venta individual
 -- 4. Buscamos al cliente
-INNER JOIN persona cli 
-    ON cli.id = sol.id_cliente
+INNER JOIN persona cli ON cli.id = sol.id_cliente
 ``` 
 ### AD.B4 
 #### Enunciado 
