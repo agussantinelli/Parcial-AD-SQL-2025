@@ -10,7 +10,7 @@ para permitir que las solicitudes sean de muchos clientes y los
 clientes puedan hacer muchas solicitudes. Modificar la estructura de 
 la base de datos para el nuevo modelo, migrar el único cliente actual 
 al nuevo modelo en una transacción y borrar la estructura anterior.
-<img width="640" height="70" alt="image" src="https://github.com/user-attachments/assets/ac7305ca-5859-46b3-9348-2d5ff1e7afa0" />
+<img width="1000" height="90" alt="image" src="https://github.com/user-attachments/assets/ac7305ca-5859-46b3-9348-2d5ff1e7afa0" />
 
 #### Resolución A
 ```sql 
