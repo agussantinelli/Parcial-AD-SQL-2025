@@ -121,30 +121,31 @@ and sc.id not in (select id_solicitud from garantia where estado
 #### Resolución C - La Mia 
 ```sql 
 WITH precio_vigente_solicitud AS (
-    -- CORRECCIÓN: Buscamos la fecha de precio específica para CADA solicitud (sc.id), 
-    SELECT sc.id AS id_solicitud,
-        MAX(vp.fecha_hora_desde) AS fecha_vigencia
+-- Saco la fecha que necesito para sacar el valor para UNA PROPIEDAD para UNA SOLICITUD.
+    SELECT sc.id AS id_solicitud, sc.id_propiedad, MAX(vp.fecha_hora_desde) AS fecha_vigencia
     FROM solicitud_contrato sc
     INNER JOIN valor_propiedad vp ON sc.id_propiedad = vp.id_propiedad 
-    AND vp.fecha_hora_desde <= sc.fecha_solicitud 
+        AND vp.fecha_hora_desde <= sc.fecha_solicitud 
     WHERE sc.estado = 'rechazada'
-    GROUP BY sc.id
+    GROUP BY sc.id, sc.id_propiedad 
 )
 SELECT 
     sc.id AS id_solicitud, sc.fecha_solicitud, ag.id AS id_agente, ag.nombre AS nombre_agente, 
     ag.apellido AS apellido_agente, (sc.importe_mensual / vp.valor) AS proporcion
 FROM solicitud_contrato sc
 INNER JOIN precio_vigente_solicitud pvs ON sc.id = pvs.id_solicitud
-INNER JOIN valor_propiedad vp ON vp.id_propiedad = sc.id_propiedad AND vp.fecha_hora_desde = pvs.fecha_vigencia
+INNER JOIN valor_propiedad vp ON vp.id_propiedad = pvs.id_propiedad AND vp.fecha_hora_desde = pvs.fecha_vigencia
 INNER JOIN persona ag ON ag.id = sc.id_agente
-WHERE 
-    sc.estado = 'rechazada'
-    AND (sc.importe_mensual / vp.valor) >= 0.70
+WHERE sc.estado = 'rechazada' AND (sc.importe_mensual / vp.valor) >= 0.70
     AND sc.id NOT IN (
         SELECT gar.id_solicitud 
         FROM garantia gar
         WHERE gar.estado = 'rechazada'
     );
+    
+    
+#### en el ej 2 y ej 4 del tema A pasa lo mismo --> es lo mismo poner o no poner la columnas tipo y id_solicitud
+#### pero convendria ponerlo por comodidad y para evitar equivocaciones
 ``` 
 ### AD.A3 
 #### Enunciado 
